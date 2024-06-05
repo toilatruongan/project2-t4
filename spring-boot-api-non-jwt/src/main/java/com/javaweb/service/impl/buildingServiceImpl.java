@@ -25,7 +25,7 @@ public class buildingServiceImpl implements BuildingService {
             BuildingResponseDTO buildingResponseDTO = new BuildingResponseDTO();
             buildingResponseDTO.setId(item.getId());
             buildingResponseDTO.setName(item.getName());
-            buildingResponseDTO.setAddress(item.getStreet() + "," + item.getWard() + "," + item.getDistrictId());
+            buildingResponseDTO.setAddress(item.getStreet() + "," + item.getWard() + "," + item.getDistrictName());
             buildingResponseDTO.setRentPrice(item.getRentPrice());
             buildingResponseDTO.setNumberOfBasement(item.getNumberOfBasement());
             buildingResponseDTO.setManagerName(item.getManagerName());

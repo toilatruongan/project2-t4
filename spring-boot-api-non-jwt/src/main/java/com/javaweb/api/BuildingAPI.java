@@ -23,7 +23,8 @@ public class BuildingAPI {
 
     @GetMapping(value = "/api/buildings")
     private Object getBuilding(@RequestParam Map<String,Object> params,
-    							@RequestParam(name="typecode", required = false)List<String>typecode) {
+    							@RequestParam(name="typecode", required = false)List<String>typecode,
+    							@RequestParam(name="staffId", required = false) Long staffId) {
         // Sử dụng service để xử lý logic
         List<BuildingResponseDTO> results = buildingService.findAll(params);
         //List<BuildingEntity> results = buildingRepository.findAll(nameBuilding, numberOfBasement);
