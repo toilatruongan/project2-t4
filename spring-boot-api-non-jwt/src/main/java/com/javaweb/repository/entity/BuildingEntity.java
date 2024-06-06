@@ -13,7 +13,8 @@ public class BuildingEntity {
     private String name;
     private String street;
     private String ward;
-    private String districtName; 
+    private Long districtId;
+    private String districtName;
     private Integer numberOfBasement;
     private Integer floorArea;
     private Integer rentPrice;
