@@ -1,7 +1,9 @@
 package com.javaweb.repository;
 
-import java.util.Map;
+import java.util.List;
+
+import com.javaweb.dto.DistrictDTO;
 
 public interface DistrictRepository {
-	public Map<Long, String> getDistrictNames();
+    List<DistrictDTO> getDistrictNames();
 }

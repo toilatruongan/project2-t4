@@ -21,6 +21,6 @@ public class BuildingEntity {
     private BigDecimal brokerageFee;
     private String managerName;
     private String managerPhoneNumber;
-    private List<Integer> rentAreas;
+    private String rentAreas;
 
 }

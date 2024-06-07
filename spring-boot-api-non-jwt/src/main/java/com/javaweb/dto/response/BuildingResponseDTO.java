@@ -20,6 +20,6 @@ public class BuildingResponseDTO {
     private Integer rentPrice;
     private Integer floorArea; // Diện tích sàn
     private Integer vacantArea; // Diện tích trống
-    private List<Integer> rentAreas; // Diện tích thuê
+    private String rentAreas;
 
 }
