@@ -1,22 +1,11 @@
 package com.javaweb.repository.impl;
 
-import java.sql.Connection;
-import java.sql.DriverManager;
-import java.sql.ResultSet;
-import java.sql.SQLException;
-import java.sql.Statement;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
-import java.util.Map;
-import java.util.stream.Collectors;
-
-import org.springframework.beans.factory.annotation.Autowired;
+import com.javaweb.repository.BuildingRepository;
+import com.javaweb.repository.entity.BuildingEntity;
 import org.springframework.stereotype.Repository;
 
-import com.javaweb.repository.BuildingRepository;
-import com.javaweb.repository.RentTypeRepository;
-import com.javaweb.repository.entity.BuildingEntity;
+import java.sql.*;
+import java.util.*;
 
 @Repository
 public class BuildingRepositoryImpl implements BuildingRepository {
@@ -25,31 +14,28 @@ public class BuildingRepositoryImpl implements BuildingRepository {
     static final String USER = "root";
     static final String PASS = "190502";
 
-    @Autowired
-    private RentTypeRepository rentTypeRepository;
-
     @Override
-    public List<BuildingEntity> findAll(Map<String, Object> params) {
+    public List<BuildingEntity> findAll(Map<String, Object> params, List<String> typecode) {
         List<BuildingEntity> buildings = new ArrayList<>();
-        StringBuilder sql = new StringBuilder("SELECT b.* FROM building b");
+        StringBuilder sql = new StringBuilder("SELECT DISTINCT b.* FROM building b");
+        StringBuilder joinClause = new StringBuilder();
         StringBuilder whereClause = new StringBuilder(" WHERE 1=1");
+
+        boolean joinRentType = false;
         boolean joinStaff = false;
         boolean joinRentArea = false;
 
-        List<Long> buildingIdsByTypeCodes = new ArrayList<>();
-        if (params.containsKey("typecode")) {
-            Object typecodeParam = params.get("typecode");
-            if (typecodeParam instanceof String) {
-                buildingIdsByTypeCodes = rentTypeRepository.getBuildingIdsByTypeCodes(Collections.singletonList((String) typecodeParam));
-            } else if (typecodeParam instanceof List) {
-                buildingIdsByTypeCodes = rentTypeRepository.getBuildingIdsByTypeCodes((List<String>) typecodeParam);
+        if (typecode != null && !typecode.isEmpty()) {
+            joinRentType = true;
+            whereClause.append(" AND b.id IN (SELECT brt.buildingid FROM buildingrenttype brt ");
+            whereClause.append("JOIN renttype rt ON brt.renttypeid = rt.id WHERE ");
+            for (int i = 0; i < typecode.size(); i++) {
+                whereClause.append("rt.code = '").append(typecode.get(i)).append("'");
+                if (i < typecode.size() - 1) {
+                    whereClause.append(" OR ");
+                }
             }
-
-            if (!buildingIdsByTypeCodes.isEmpty()) {
-                whereClause.append(" AND b.id IN (")
-                           .append(buildingIdsByTypeCodes.stream().map(String::valueOf).collect(Collectors.joining(",")))
-                           .append(")");
-            }
+            whereClause.append(")");
         }
 
         for (Map.Entry<String, Object> entry : params.entrySet()) {
@@ -88,15 +74,20 @@ public class BuildingRepositoryImpl implements BuildingRepository {
             }
         }
 
+        if (joinRentType) {
+            joinClause.append(" JOIN buildingrenttype brt ON b.id = brt.buildingid ");
+            joinClause.append(" JOIN renttype rt ON brt.renttypeid = rt.id ");
+        }
+
         if (joinStaff) {
-            sql.append(" JOIN assignmentbuilding ab ON b.id = ab.buildingid ");
+            joinClause.append(" JOIN assignmentbuilding ab ON b.id = ab.buildingid ");
         }
 
         if (joinRentArea) {
-            sql.append(" JOIN rentarea ra ON b.id = ra.buildingid ");
+            joinClause.append(" JOIN rentarea ra ON b.id = ra.buildingid ");
         }
 
-        sql.append(whereClause);
+        sql.append(joinClause).append(whereClause);
 
         try (Connection conn = DriverManager.getConnection(DB_URL, USER, PASS);
              Statement stm = conn.createStatement();

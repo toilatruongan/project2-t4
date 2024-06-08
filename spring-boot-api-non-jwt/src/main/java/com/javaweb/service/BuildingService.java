@@ -7,6 +7,6 @@ import com.javaweb.dto.response.BuildingResponseDTO;
 
 public interface BuildingService {
     //List<BuildingResponseDTO> findAll (String nameBuilding, Integer numberOfBasement);
-    List<BuildingResponseDTO> findAll (Map<String, Object> params);
+    List<BuildingResponseDTO> findAll (Map<String, Object> params, List<String> typecode);
 
 }
