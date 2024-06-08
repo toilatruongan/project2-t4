@@ -8,12 +8,13 @@ import java.util.stream.Collectors;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
-import com.javaweb.dto.DistrictDTO;
 import com.javaweb.dto.response.BuildingResponseDTO;
 import com.javaweb.repository.BuildingRepository;
 import com.javaweb.repository.DistrictRepository;
 import com.javaweb.repository.RentAreaRepository;
 import com.javaweb.repository.entity.BuildingEntity;
+import com.javaweb.repository.entity.DistrictEntity;
+import com.javaweb.repository.entity.RentAreaEntity;
 import com.javaweb.service.BuildingService;
 
 @Service
@@ -31,10 +32,10 @@ public class BuildingServiceImpl implements BuildingService {
     public List<BuildingResponseDTO> findAll(Map<String, Object> params, List<String> typecode) {
         List<BuildingEntity> buildingEntities = buildingRepository.findAll(params, typecode);
         List<BuildingResponseDTO> results = new ArrayList<>();
-        List<DistrictDTO> districtNames = districtRepository.getDistrictNames();
+        List<DistrictEntity> districtNames = districtRepository.getDistrictNames();
 
         Map<Long, String> districtNameMap = districtNames.stream()
-            .collect(Collectors.toMap(DistrictDTO::getId, DistrictDTO::getName));
+            .collect(Collectors.toMap(DistrictEntity::getId, DistrictEntity::getName));
 
         for (BuildingEntity item : buildingEntities) {
             BuildingResponseDTO buildingResponseDTO = new BuildingResponseDTO();
@@ -49,7 +50,10 @@ public class BuildingServiceImpl implements BuildingService {
             buildingResponseDTO.setBrokerageFee(item.getBrokerageFee());
             buildingResponseDTO.setFloorArea(item.getFloorArea());
 
-            String rentAreas = rentAreaRepository.getRentAreasByBuildingId(item.getId());
+            List<RentAreaEntity> rentAreaEntities = rentAreaRepository.getRentAreasByBuildingId(item.getId());
+            String rentAreas = rentAreaEntities.stream()
+                .map(RentAreaEntity::getValue)
+                .collect(Collectors.joining(","));
             buildingResponseDTO.setRentAreas(rentAreas);
 
             results.add(buildingResponseDTO);

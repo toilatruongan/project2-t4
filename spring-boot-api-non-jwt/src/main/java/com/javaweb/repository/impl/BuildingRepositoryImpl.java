@@ -27,8 +27,9 @@ public class BuildingRepositoryImpl implements BuildingRepository {
 
         if (typecode != null && !typecode.isEmpty()) {
             joinRentType = true;
-            whereClause.append(" AND b.id IN (SELECT brt.buildingid FROM buildingrenttype brt ");
-            whereClause.append("JOIN renttype rt ON brt.renttypeid = rt.id WHERE ");
+            joinClause.append(" JOIN buildingrenttype brt ON b.id = brt.buildingid ");
+            joinClause.append(" JOIN renttype rt ON brt.renttypeid = rt.id ");
+            whereClause.append(" AND (");
             for (int i = 0; i < typecode.size(); i++) {
                 whereClause.append("rt.code = '").append(typecode.get(i)).append("'");
                 if (i < typecode.size() - 1) {
@@ -44,6 +45,7 @@ public class BuildingRepositoryImpl implements BuildingRepository {
 
             if (key.equals("staffId") && value != null) {
                 joinStaff = true;
+                joinClause.append(" JOIN assignmentbuilding ab ON b.id = ab.buildingid ");
                 whereClause.append(" AND ab.staffid = ").append(value);
             } else if (key.equals("districtId") && value != null) {
                 whereClause.append(" AND b.districtid = ").append(value);
@@ -67,24 +69,13 @@ public class BuildingRepositoryImpl implements BuildingRepository {
                 whereClause.append(" AND b.level LIKE '%").append(value).append("%'");
             } else if (key.equals("rentAreaFrom") && value != null) {
                 joinRentArea = true;
+                joinClause.append(" JOIN rentarea ra ON b.id = ra.buildingid ");
                 whereClause.append(" AND ra.value >= ").append(value);
             } else if (key.equals("rentAreaTo") && value != null) {
                 joinRentArea = true;
+                joinClause.append(" JOIN rentarea ra ON b.id = ra.buildingid ");
                 whereClause.append(" AND ra.value <= ").append(value);
             }
-        }
-
-        if (joinRentType) {
-            joinClause.append(" JOIN buildingrenttype brt ON b.id = brt.buildingid ");
-            joinClause.append(" JOIN renttype rt ON brt.renttypeid = rt.id ");
-        }
-
-        if (joinStaff) {
-            joinClause.append(" JOIN assignmentbuilding ab ON b.id = ab.buildingid ");
-        }
-
-        if (joinRentArea) {
-            joinClause.append(" JOIN rentarea ra ON b.id = ra.buildingid ");
         }
 
         sql.append(joinClause).append(whereClause);
@@ -93,21 +84,27 @@ public class BuildingRepositoryImpl implements BuildingRepository {
              Statement stm = conn.createStatement();
              ResultSet rs = stm.executeQuery(sql.toString())) {
 
+            Set<Long> buildingIds = new HashSet<>();
             while (rs.next()) {
-                BuildingEntity buildingEntity = new BuildingEntity();
-                buildingEntity.setId(rs.getLong("id"));
-                buildingEntity.setName(rs.getString("name"));
-                buildingEntity.setStreet(rs.getString("street"));
-                buildingEntity.setWard(rs.getString("ward"));
-                buildingEntity.setDistrictId(rs.getLong("districtid"));
-                buildingEntity.setNumberOfBasement(rs.getInt("numberofbasement"));
-                buildingEntity.setFloorArea(rs.getInt("floorarea"));
-                buildingEntity.setRentPrice(rs.getInt("rentprice"));
-                buildingEntity.setBrokerageFee(rs.getBigDecimal("brokeragefee"));
-                buildingEntity.setManagerName(rs.getString("managername"));
-                buildingEntity.setManagerPhoneNumber(rs.getString("managerphonenumber"));
+                Long buildingId = rs.getLong("id");
+                if (!buildingIds.contains(buildingId)) {
+                    buildingIds.add(buildingId);
 
-                buildings.add(buildingEntity);
+                    BuildingEntity buildingEntity = new BuildingEntity();
+                    buildingEntity.setId(rs.getLong("id"));
+                    buildingEntity.setName(rs.getString("name"));
+                    buildingEntity.setStreet(rs.getString("street"));
+                    buildingEntity.setWard(rs.getString("ward"));
+                    buildingEntity.setDistrictId(rs.getLong("districtid"));
+                    buildingEntity.setNumberOfBasement(rs.getInt("numberofbasement"));
+                    buildingEntity.setFloorArea(rs.getInt("floorarea"));
+                    buildingEntity.setRentPrice(rs.getInt("rentprice"));
+                    buildingEntity.setBrokerageFee(rs.getBigDecimal("brokeragefee"));
+                    buildingEntity.setManagerName(rs.getString("managername"));
+                    buildingEntity.setManagerPhoneNumber(rs.getString("managerphonenumber"));
+
+                    buildings.add(buildingEntity);
+                }
             }
         } catch (SQLException e) {
             e.printStackTrace();
