@@ -9,6 +9,12 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
 
+import javax.persistence.Query;
+import javax.transaction.Transactional;
+import javax.persistence.EntityManager;
+import javax.persistence.PersistenceContext;
+
+import org.springframework.context.annotation.Primary;
 import org.springframework.stereotype.Repository;
 
 import com.javaweb.builder.BuildingSearchBuilder;
@@ -17,8 +23,11 @@ import com.javaweb.repository.entity.BuildingEntity;
 import com.javaweb.utils.ConnectionUtil;
 
 @Repository
+@Primary // ưu tiên
 public class BuildingRepositoryImpl implements BuildingRepository {
-
+	@PersistenceContext
+	private EntityManager entityManager;
+	
     private void querySqlJoin(BuildingSearchBuilder builder, StringBuilder join) {
         Integer staffId = builder.getStaffId();
         if (staffId != null) {
@@ -93,6 +102,7 @@ public class BuildingRepositoryImpl implements BuildingRepository {
     }
 
     @Override
+    @Transactional
     public List<BuildingEntity> findAll(BuildingSearchBuilder builder) {
         List<BuildingEntity> buildings = new ArrayList<>();
         StringBuilder sql = new StringBuilder("SELECT DISTINCT b.* FROM building b");
@@ -105,31 +115,7 @@ public class BuildingRepositoryImpl implements BuildingRepository {
 
         sql.append(joinClause).append(whereClause);
 
-        try (Connection conn = ConnectionUtil.getConnection();
-             Statement stm = conn.createStatement();
-             ResultSet rs = stm.executeQuery(sql.toString())) {
-
-            while (rs.next()) {
-                BuildingEntity buildingEntity = new BuildingEntity();
-                buildingEntity.setId(rs.getLong("id"));
-                buildingEntity.setName(rs.getString("name"));
-                buildingEntity.setStreet(rs.getString("street"));
-                buildingEntity.setWard(rs.getString("ward"));
-                buildingEntity.setDistrictId(rs.getLong("districtid"));
-                buildingEntity.setNumberOfBasement(rs.getInt("numberofbasement"));
-                buildingEntity.setFloorArea(rs.getInt("floorarea"));
-                buildingEntity.setRentPrice(rs.getInt("rentprice"));
-                buildingEntity.setBrokerageFee(rs.getBigDecimal("brokeragefee"));
-                buildingEntity.setManagerName(rs.getString("managername"));
-                buildingEntity.setManagerPhoneNumber(rs.getString("managerphonenumber"));
-
-                buildings.add(buildingEntity);
-            }
-        } catch (SQLException e) {
-            e.printStackTrace();
-            System.out.println("Connected database failed: " + e.getMessage());
-        }
-
-        return buildings;
+        Query query  = entityManager.createNativeQuery(sql.toString(), BuildingEntity.class);
+        return query.getResultList();
     }
 }
